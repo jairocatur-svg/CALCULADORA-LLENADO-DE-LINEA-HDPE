@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#102b3e">
+  <meta name="description" content="Estima el tiempo de llegada a descarga de una línea HDPE según PN, diámetro, distancia y caudal.">
+  <title>Tiempo de llegada a descarga</title>
+  <style>
+    :root { color-scheme: light; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; --navy:#102b3e; --ink:#152b38; --muted:#657782; --line:#d8e2e7; --aqua:#0f777d; --soft:#edf6f5; }
+    * { box-sizing: border-box; }
+    body { margin:0; background:#f3f6f7; color:var(--ink); }
+    header { background:var(--navy); color:white; padding:32px 20px 76px; }
+    .wrap { max-width:800px; margin:auto; }
+    .eyebrow { font-size:12px; font-weight:800; letter-spacing:.15em; text-transform:uppercase; color:#82d5d3; }
+    h1 { margin:12px 0 8px; font-size:clamp(27px,5vw,42px); line-height:1.1; max-width:660px; }
+    header p { margin:0; color:#d0e2e8; font-size:15px; }
+    main { padding:0 16px 48px; margin-top:-48px; }
+    .card { background:#fff; border:1px solid #e0e8eb; border-radius:20px; box-shadow:0 16px 40px rgba(16,43,62,.09); padding:26px; }
+    .card h2 { margin:0 0 5px; font-size:20px; }
+    .sub { color:var(--muted); margin:0 0 24px; font-size:14px; }
+    .grid { display:grid; grid-template-columns:repeat(2,1fr); gap:18px; }
+    label { display:block; font-size:13px; font-weight:750; margin:0 0 7px; }
+    input,select { width:100%; height:50px; border:1px solid #b8cbd2; border-radius:10px; padding:0 14px; background:white; color:var(--ink); font:inherit; font-size:17px; }
+    input:focus,select:focus { outline:3px solid #b3e6e3; border-color:var(--aqua); }
+    input::placeholder { color:#9eafb7; }
+    .pn-field { border:0; padding:0; margin:0; min-width:0; }
+    .pn-field legend { font-size:13px; font-weight:750; margin-bottom:9px; }
+    .pn-options { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; }
+    .pn-choice { display:flex; align-items:center; gap:7px; border:1px solid #b8cbd2; border-radius:10px; padding:11px 8px; margin:0; cursor:pointer; background:#fff; font-size:13px; }
+    .pn-choice input { width:18px; height:18px; margin:0; accent-color:#0f777d; flex:none; }
+    .pn-choice:has(input:checked) { background:#d7efec; border-color:#0f777d; }
+    .hint { color:var(--muted); margin:6px 0 0; font-size:12px; }
+    .full { grid-column:1/-1; }
+    .result { margin-top:26px; background:var(--soft); border:1px solid #c5e1df; border-radius:15px; padding:22px; }
+    .result .label { margin:0; color:#315e64; font-size:12px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+    .result output { display:block; margin-top:5px; font-size:clamp(29px,6vw,46px); font-weight:800; letter-spacing:-.04em; color:#07565b; }
+    .result .details { color:#47676c; margin:8px 0 0; font-size:14px; }
+    .result.empty output { color:#637a7f; font-size:24px; letter-spacing:0; }
+    .note { margin:16px 4px 0; color:#60737e; font-size:13px; line-height:1.5; }
+    @media(max-width:540px) { .grid { grid-template-columns:1fr; gap:16px; } .card { padding:20px; } header { padding-top:25px; } }
+  </style>
+</head>
+<body>
+  <header><div class="wrap">
+    <div class="eyebrow">Operaciones mina · HDPE</div>
+    <h1>Tiempo de llegada a descarga</h1>
+    <p>Ingresa los datos de la línea y obtén una estimación al instante.</p>
+  </div></header>
+  <main class="wrap">
+    <section class="card" aria-labelledby="datos">
+      <h2 id="datos">Datos de la línea</h2>
+      <p class="sub">Completa las medidas indicadas en la tubería y el caudal de bombeo.</p>
+      <form id="calc" class="grid" autocomplete="off">
+        <div class="full"><label for="pozo">Nombre del pozo <span style="font-weight:400;color:#70818b">(opcional)</span></label><input id="pozo" placeholder="Ej.: W-UB-304"></div>
+        <fieldset class="full pn-field"><legend>PN</legend><div class="pn-options"><label class="pn-choice"><input type="radio" name="pn" value="4"><span>4</span></label><label class="pn-choice"><input type="radio" name="pn" value="6"><span>6</span></label><label class="pn-choice"><input type="radio" name="pn" value="8"><span>8</span></label><label class="pn-choice"><input type="radio" name="pn" value="10"><span>10</span></label><label class="pn-choice"><input type="radio" name="pn" value="12"><span>12</span></label></div></fieldset>
+        <div><label for="diametro">Diámetro exterior (mm)</label><input id="diametro" type="text" inputmode="decimal" placeholder="Ej.: 90"></div>
+        <div><label for="distancia">Distancia hasta descarga (m)</label><input id="distancia" type="text" inputmode="decimal" placeholder="Ej.: 3500"></div>
+        <div><label for="caudal">Caudal (m³/h)</label><input id="caudal" type="text" inputmode="decimal" placeholder="Ej.: 5,2" aria-describedby="caudal-ayuda"><p class="hint" id="caudal-ayuda">Admite coma o punto: 5,2 o 5.2.</p></div>
+      </form>
+      <div class="result empty" id="resultado" role="status" aria-live="polite">
+        <p class="label">Llegada estimada a descarga</p>
+        <output id="tiempo">Completa los cuatro datos</output>
+        <p class="details" id="detalle">El cálculo aparecerá aquí.</p>
+      </div>
+      <p class="note">Estimación para línea HDPE PE100 inicialmente vacía. Equivalencias usadas: PN4/SDR41, PN6/SDR26, PN8/SDR21 y PN10/SDR17. Para PN12 se supone PN12,5/SDR13,6. Se estima el volumen interior dividido por el caudal. Aire atrapado, pendientes, válvulas o variaciones de caudal pueden cambiar el tiempo real.</p>
+    </section>
+  </main>
+  <script>
+    const form=document.querySelector('#calc'), out=document.querySelector('#tiempo'), detail=document.querySelector('#detalle'), panel=document.querySelector('#resultado');
+    const fmt=new Intl.NumberFormat('es-CL',{maximumFractionDigits:2});
+    function readDecimal(selector){
+      const value=document.querySelector(selector).value.trim();
+      return /^(?:\d+(?:[.,]\d*)?|[.,]\d+)$/.test(value) ? Number(value.replace(',','.')) : NaN;
+    }
+    function calculate(){
+      const pn=Number(document.querySelector('input[name="pn"]:checked')?.value || 0);
+      const d=readDecimal('#diametro');
+      const m=readDecimal('#distancia');
+      const q=readDecimal('#caudal');
+      const pozo=document.querySelector('#pozo').value.trim();
+      const sdrByPn={4:41,6:26,8:21,10:17,12:13.6};
+      if(!Object.hasOwn(sdrByPn,pn)||!Number.isFinite(d)||d<=0||!Number.isFinite(m)||m<=0||!Number.isFinite(q)||q<=0){
+        panel.classList.add('empty');out.textContent='Completa los cuatro datos';detail.textContent='El cálculo aparecerá aquí.';return;
+      }
+      const sdr=sdrByPn[pn];
+      const inner=d*(1-2/sdr);
+      const volume=Math.PI/4*(inner/1000)**2*m;
+      const totalMinutes=Math.round(volume/q*60);
+      const hours=Math.floor(totalMinutes/60), mins=totalMinutes%60;
+      panel.classList.remove('empty');
+      out.textContent=`${hours} h ${String(mins).padStart(2,'0')} min`;
+      detail.textContent=`${pozo?pozo+' · ':''}Volumen estimado: ${fmt.format(volume)} m³ · Diámetro interior: ${fmt.format(inner)} mm`;
+    }
+    form.addEventListener('input',calculate);
+    form.addEventListener('change',calculate);
+  </script>
+</body>
+</html>
